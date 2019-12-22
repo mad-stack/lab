@@ -1,419 +1,3 @@
-Part B: Cn
-
-1: CRC CCITT(16bits)
-
-#include <stdio.h>
-#include <stdlib.h>
-int message[100];
-int b[100];
-int j;
-int length;
-int gp[17]={1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,1};
-
-void divide(int k)
-                    {
-
-int i,j,count=0;
-for(i=0;i<k;i++)
-                                {
-if(message[i]==gp[0])
-                                    {
-
-for(j=i;j<17+i;j++)
-                                        {
-message[j]=message[j]^gp[count++];
-                                        }
-
-                                        }
-count=0;
-                                    }
-                                }
-
-int main()
-{
-int i;
-printf("Enter the length of the Data Frame: \n");
-scanf("%d",&length);
-
-printf("\n Enter the message (in bits,ie 0's and 1's)");
-printf("\n But each bit separated by space or the new line :");
-
-for(i=0;i<length;i++)
-                                {
-scanf("%d",&message[i]);
-                                }
-for(i=0;i<16;i++)
-                                {
-message[length++]=0;
-                                }
-for(i=0;i<length;i++)
-                                {
-b[i]=message[i];
-                                }
-
-divide(length-16);
-for(i=0;i<length;i++)
-                                {
-b[i]=b[i]^message[i];
-                                }
-printf("\n Data to be Transmitted \n");
-for(i=0;i<length;i++)
-                                {
-printf("%2d",b[i]);
-                                }
-printf("\n Enter the received data \n");
-for(i=0;i<length;i++)
-                                {
-scanf("%d",&message[i]);
-                                }
-divide(length-16);
-for(i=0;i<length;i++)
-                                {
-if(message[i]!=0)
-                                    {
-
-printf("\n Error in received data");
-return 0;
-                                    }
-                                }
-printf("\n data received in error free");
-return 0;
-
-}
-
-
-
-2: Distance vector algorithm:
-#include <stdio.h>
-#include <stdlib.h>
-int nodes,adjacency[10][10],intermediate[10][10],distance[10][10],i,j,k;
-
-void readRoutingTable()
-{
-printf("\n enter the node \n");
-scanf("%d",&nodes);
-
-printf("\n If no direct edge between vertex u and v or ");
-printf("\n if cost is unknown then enter 999, enter 0 if its same node ");
-printf("\n\n  enter the routing table : \n | ");
-
-for(i=0;i<nodes;i++)
-printf("-------");
-printf("\n");
-
-for(i=0;i<nodes;i++)
-        {
-printf("%c | ",'a'+i);
-for(j=0;j<nodes;j++)
-                    {
-scanf("%d",&distance[i][j]);
-if(distance[i][j]!=999)
-adjacency[i][j]=1;
-
-                    }
-        }
-
-}
-int main()
-{
-readRoutingTable();
-for(i=0;i<nodes;i++)
-for(j=0;j<nodes;j++)
-intermediate[i][j]=i;
-
-for(i=0;i<nodes;i++)
-for(j=0;j<nodes;j++)
-if(adjacency[i][j])
-for(k=0;k<nodes;k++)
-if(distance[i][j]+distance[j][k]<distance[i][k])
-        {
-distance[i][k]=distance[i][j]+distance[j][k];
-intermediate[i][k]=j;
-        }
-for(i=0;i<nodes;i++)
-         {
-printf("\n Table for router %c\n",'a'+i);
-
-for(j=0;j<nodes;j++)
-
-printf("%c:: %d via %c\n",'a'+j,distance[i][j],'a'+intermediate[i][j]);
-         }
-
-return 0;
-}
-
-
-3: Client server program:
-Client:
-
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<sys/types.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<netdb.h>
-
-int main(int argc,char *argv[])
-{
-	int sockfd,newsockfd,portno,len,n;
-	char buffer[256],c[20000];
-
-	struct sockaddr_in serv,cli;
-	FILE *fd;
-
-	if(argc<2)
-	{
-		printf("Err:no port no.\nusage:\n./client portno\n ex:./client 7777\n");
-		exit(1);
-	}
-
-	sockfd=socket(AF_INET,SOCK_STREAM,0);
-	bzero((char *)&serv,sizeof(serv));
-	portno=atoi(argv[1]);
-	serv.sin_family=AF_INET;
-	serv.sin_port=htons(portno);
-	
-	if(connect(sockfd,(struct sockaddr *)&serv,sizeof(serv))<0)
-	{
-		printf("server not responding..\n\n\n\ti am to terminate\n");
-		exit(1);
-	}
-
-	printf("Enter the file with complete path\n");
-	scanf("%s",&buffer);
-
-	if(write(sockfd,buffer,strlen(buffer))<0)
-		printf("Err writing to socket..\n");
-	bzero(c,2000);
-	
-	printf("Reading..\n..\n");
-	
-	if(read(sockfd,c,1999)<0)
-		printf("error: read error\n");
-	printf("client: display content of %s\n..\n",buffer);
-	fputs(c,stdout);
-	printf("\n..\n");
-	return 0;
-}
-
-
-
-Server:
-
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<sys/types.h>
-#include<netinet/in.h>
-#include<sys/socket.h>
-#include<netdb.h>
-
-int main(int argc,char *argv[]){
-int sockfd,newsockfd,portno,len,n;
-char buffer[256],c[2000],cc[20000];
-struct sockaddr_in serv,cli;
-
-FILE *fd;
-if(argc<2){
-	printf("Error:No port no\n usage:\n/server port_no\n");
-	exit(1);
-}
-
-sockfd=socket(AF_INET,SOCK_STREAM,0);
-portno=atoi(argv[1]);
-
-serv.sin_family=AF_INET;
-serv.sin_addr.s_addr=INADDR_ANY;
-serv.sin_port=htons(portno);
-
-bind(sockfd,(struct sockaddr *)&serv,sizeof(serv));
-listen(sockfd,10);
-
-len=sizeof(cli);
-
-printf("Server:\nWaiting for connection\n");
-
-newsockfd=accept(sockfd,(struct sockaddr *)&cli,&len);
-bzero(buffer,255);
-
-n=read(newsockfd,buffer,255);
-printf("\nSERVER RECV:%s\n",buffer);
-
-if((fd=fopen(buffer,"r"))!=NULL){
-printf("server:%s found \n opening and reading...\n",buffer);
-printf("READING...\n.. WRITING COMPLETE");
-
-fgets(cc,200,fd);
-
-while(!feof(fd)){
-fgets(c,2000,fd);
-strcat(cc,c);
-}
-
-n=write(newsockfd,cc,strlen(cc));
-if(n<0){
-printf("errioe writing to socket");
-printf("transfer complete");
-}
-}
-else{
-printf("server file not found");
-n=write(newsockfd,"File not found",15);
-if(n<0)
-printf("erroe:writing to socket");
-}
-return 0;
-}
-
-
-
-4: Rsa algorithm:
-
-#include <stdio.h>
-#include <stdlib.h>
-#include<math.h>
-int gcd(long m,long n)
-{
-
-while(n!=0)
-    {
-long r=m%n;
-        m=n;
-        n=r;
-    }
-return m;
-
-}
-int rsa(char message[50])
-{
-
-long p=0,q=0,n=0,e=0,d=0,phi=0;
-long nummes[100]={0};
-long encrypted[100]={0},decrypted[100]={0};
-long i=0,j=0,nofelem=0;
-printf("\n \n enter the value of p and q \n");
-scanf("%d%d",&p,&q);
-    n=p*q;
-phi=(p-1)*(q-1);
-for(i=2;i<phi;i++)
-if(gcd(i,phi)==1)break;
-    e=i;
-for(i=2;i<phi;i++)
-if((e*i-1)%phi==0)break;
-    d=i;
-for(i=0;i<strlen(message);i++)
-nummes[i]=message[i]-96;
-nofelem=strlen(message);
-for(i=0;i<nofelem;i++)
-    {
-encrypted[i]=1;
-for(j=0;j<e;j++)
-encrypted[i]=(encrypted[i]*nummes[i])%n;
-    }
-printf("\n Encrypted Message \n");
-for(i=0;i<nofelem;i++)
-    {
-printf("%ld",encrypted[i]);
-printf("%c",(char)(encrypted[i])+96);
-    }
-for(i=0;i<nofelem;i++)
-    {
-decrypted[i]=1;
-for(j=0;j<d;j++)
-decrypted[i]=(decrypted[i]*encrypted[i])%n;
-    }
-printf("\n Decrypted Message \n");
-for(i=0;i<nofelem;i++)
-printf("%c",(char)(decrypted[i])+96);
-return 0;
-}
-int main()
-{
-char msg[100];
-
-
-printf("Enter the message to be encrypted\n");
-scanf("%s",msg);
-rsa(msg);
-
-return 0;
-}
-
-
-
-5: leaky bucket algorithm:
-
-#include <stdio.h>
-#include <stdlib.h>
-#include<math.h>
-
-void main()
-{
-    int packets[8],i,j,clk,b_size,o_rate,i_rate,p_sz_rm=0,p_sz,p_time;
-//    clrscr();
-for(i=0;i<5;++i)
-    {
-packets[i]=rand()%10;
-if(packets[i]==0) --i;
-
-    }
-printf("Enter output rate:");
-scanf("%d",&o_rate);
-printf("\n Enter bucket size:");
-scanf("%d",&b_size);
-for(i=0;i<5;++i)
-    {
-if((packets[i]+p_sz_rm)>b_size)
-        {
-if(packets[i]>b_size)
-printf("\n Incoming packet size:%d greater than bucket capacity\n",packets[i]);
-else
-printf("Bucket size exceeded\n");
-        }
-else
-        {
-            p_sz=packets[i];
-            p_sz_rm+=p_sz;
-printf("\n---------------------------\n");
-printf("Incoming packet:%d",p_sz);
-printf("\nTransmission left\n",p_sz_rm);
-            p_time=rand()%10;
-printf("Next packet will come at %d",p_time);
-for(clk=0;clk<p_time&&p_sz_rm>0;++clk)
-            {
-printf("\n Time left %d---No packets to transmit!!\n",p_time-clk);
-//              sleep(1);
-if(p_sz_rm)
-                {
-printf("Transmitted\n");
-if(p_sz_rm<o_rate)
-                        p_sz_rm=0;
-else
-p_sz_rm-=o_rate;
-printf("Bytes remaining:%d\n",p_sz_rm);
-                }
-else
-printf("No packets to transmit\n");
-
-            }
-        }
-    }
-getch();
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 USP LAB:
 PART A: Os
@@ -1078,75 +662,66 @@ _exit(0);
 
 4.locked
 
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <fcntl.h>
-int main(int argc, char *argv[])
-{
-	char temp[1000];
-setbuf(stdout,temp);
-
-struct flock fvar;
-int fdesc;
-char buf;
-int rc;
-
-off_t offset;
-
-pid_t pid=fork();
-
-fdesc=open(argv[1],O_RDWR);
-fvar.l_type=F_WRLCK;
-fvar.l_whence=SEEK_END;
-fvar.l_start=-100;
-fvar.l_len=100;
-
-if(fcntl(fdesc,F_SETLK,&fvar)==-1)
-{
-printf("\n--------------------------------\n");
-printf("\n Unable to get lock as file has been locked by:\n");
-while(fcntl(fdesc,F_GETLK,&fvar)==-1  && fvar.l_type!=F_UNLCK)
-{
-		printf("\n File : %s is looked by process with pid : %u",argv[1],fvar.l_pid);
-		printf(" from %ld th byte in folder for %ld",fvar.l_start,fvar.l_len);
-		printf("number of bytes,for %s \n\n",(fvar.l_type==F_WRLCK?"write" : "read"));
-
-
-if(!fvar.l_len)
-break;
-
-fvar.l_start+=fvar.l_len;
-fvar.l_len=0;
-}
-}
-else
-{
-printf("\n..............................\n");
-printf("\n\n File: %s was not locked and acquiring of Exclusive Lock was",argv[1]);
-printf("successful By Process ID : %u \n",getpid());
-offset=lseek(fdesc,-50,SEEK_END);
-
-printf("\n\n Last 50 bytes of file : %s =\n",argv[1]);
-
-while((rc=read(fdesc,&buf,1))>0)
-
-printf("%c",buf);
-fvar.l_type=F_UNLCK;
-fvar.l_whence=SEEK_END;
-fvar.l_start=-100;
-fvar.l_len=100;
-
-if(fcntl(fdesc,F_SETLKW,&fvar)!=-1)
-printf("\n File Unlocked Succesfull\n\n");
-}
-return 0;
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+ #include <fcntl.h>
+ #include <errno.h>
+ int main(int argc,char *argv[])
+ {
+        int fd;
+        char buffer[255];
+        struct flock fvar;
+        if(argc==1)
+        {
+                printf("usage: %s filename\n",argv[0]);
+                return -1;
+        }
+        if((fd=open(argv[1],O_RDWR))==-1)
+        {
+                perror("open");
+                exit(1);
+        }
+        fvar.l_type=F_WRLCK;
+        fvar.l_whence=SEEK_END;
+        fvar.l_start=SEEK_END-100;
+        fvar.l_len=100;
+        printf("press enter to set lock\n");
+        getchar();
+        printf("trying to get lock..\n");
+        if((fcntl(fd,F_SETLK,&fvar))==-1)
+        {     fcntl(fd,F_GETLK,&fvar);
+              printf("\nFile already locked by process (pid):    \t%d\n",fvar.l_pid);        
+              return -1;        
+        }
+        printf("locked\n");
+        if((lseek(fd,SEEK_END-50,SEEK_END))==-1)
+        {
+                perror("lseek");
+                exit(1);
+        }
+        if((read(fd,buffer,100))==-1)
+        {
+                perror("read");
+                exit(1);
+        }
+        printf("data read from file..\n");
+        puts(buffer);
+        printf("press enter to release lock\n");
+        getchar();
+        fvar.l_type = F_UNLCK;
+        fvar.l_whence = SEEK_SET;
+        fvar.l_start = 0;
+        fvar.l_len = 0;
+        if((fcntl(fd,F_UNLCK,&fvar))==-1)
+        {
+                perror("fcntl");
+                exit(0);
+        }
+        printf("Unlocked\n");
+        close(fd);
+        return 0;
+ }
 
 
 
@@ -1230,6 +805,73 @@ int main()
 	close(readfd);unlink(FIFO1);
 	close(writefd);unlink(FIFO2);
 }
+
+
+
+
+other one
+Server:
+#include<stdio.h>
+#include<unistd.h>
+#include<fcntl.h> /*used for file handling*/
+#include<sys/stat.h> /*used for mkfifo function*/
+#include<sys/types.h> /*when compiled in gcc, mkfifo() has dependency on both types.h and stat.h*/
+
+intmain()
+{
+charfname[50], buffer[1025];
+intreq, res, n, file;
+mkfifo("req.fifo", 0777);
+mkfifo("res.fifo", 0777);
+printf("Waiting for request...\n");
+req = open("req.fifo", O_RDONLY);
+    res = open("res.fifo", O_WRONLY);
+    read(req, fname, sizeof(fname));
+printf("Received request for %s\n", fname);
+    file = open(fname, O_RDONLY);
+if (file <0)
+        write(res, "File not found\n", 15);
+else {
+while((n = read(file, buffer, sizeof(buffer))) >0) {
+            write(res, buffer, n);
+        }
+    }
+    close(req);
+    close(res);
+    unlink("req.fifo");
+    unlink("res.fifo");
+return0;
+}
+Client :
+#include<stdio.h>
+#include<unistd.h> 
+#include<stdlib.h>
+#include<fcntl.h>
+#include<sys/stat.h>
+#include<sys/types.h>
+
+Int main()
+{
+charfname[50], buffer[1025];
+intreq, res, n;
+req = open("req.fifo", O_WRONLY);
+    res = open("res.fifo", O_RDONLY);
+if(req<0 || res <0) {
+printf("Please Start the server first\n");
+exit(-1);
+    }
+printf("Enter filename to request:\n");
+scanf("%s", fname);
+    write(req, fname, sizeof(fname));
+printf("Received response\n");
+while((n = read(res, buffer, sizeof(buffer)))>0) {
+        write(1, buffer, n);
+    }
+    close(req);
+    close(res);
+return0;
+}
+
 
 
 
